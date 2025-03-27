@@ -139,27 +139,15 @@ function getQualifiedRouteComponent(value) {
 }
 exports.getQualifiedRouteComponent = getQualifiedRouteComponent;
 /**
- * @param getId Override that will be wrapped to remove __EXPO_ROUTER_key which is added by PUSH
  * @returns a function which provides a screen id that matches the dynamic route name in params. */
-function createGetIdForRoute(route, getId) {
+function createGetIdForRoute(route) {
     const include = new Map();
     if (route.dynamic) {
         for (const segment of route.dynamic) {
             include.set(segment.name, segment);
         }
     }
-    return (options = {}) => {
-        const { params = {} } = options;
-        if (params.__EXPO_ROUTER_key) {
-            const key = params.__EXPO_ROUTER_key;
-            delete params.__EXPO_ROUTER_key;
-            if (getId == null) {
-                return key;
-            }
-        }
-        if (getId != null) {
-            return getId(options);
-        }
+    return withStrippedExpoRouterKey(({ params = {} } = {}) => {
         const segments = [];
         for (const dynamic of include.values()) {
             const value = params?.[dynamic.name];
@@ -179,9 +167,19 @@ function createGetIdForRoute(route, getId) {
             }
         }
         return segments.join('/') ?? route.contextKey;
-    };
+    });
 }
 exports.createGetIdForRoute = createGetIdForRoute;
+function withStrippedExpoRouterKey(getId) {
+    return (options = {}) => {
+        if (options.params?.__EXPO_ROUTER_key) {
+            const key = options.params.__EXPO_ROUTER_key;
+            delete options.params.__EXPO_ROUTER_key;
+            return key;
+        }
+        return getId?.(options);
+    };
+}
 function screenOptionsFactory(route, options) {
     return (args) => {
         // Only eager load generated components
@@ -204,7 +202,7 @@ function screenOptionsFactory(route, options) {
 }
 exports.screenOptionsFactory = screenOptionsFactory;
 function routeToScreen(route, { options, getId, ...props } = {}) {
-    return (<primitives_1.Screen {...props} getId={createGetIdForRoute(route, getId)} name={route.route} key={route.route} options={screenOptionsFactory(route, options)} getComponent={() => getQualifiedRouteComponent(route)}/>);
+    return (<primitives_1.Screen {...props} getId={getId ? withStrippedExpoRouterKey(getId) : createGetIdForRoute(route)} name={route.route} key={route.route} options={screenOptionsFactory(route, options)} getComponent={() => getQualifiedRouteComponent(route)}/>);
 }
 exports.routeToScreen = routeToScreen;
 //# sourceMappingURL=useScreens.js.map

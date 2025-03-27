@@ -228,11 +228,9 @@ export function getQualifiedRouteComponent(value: RouteNode) {
 }
 
 /**
- * @param getId Override that will be wrapped to remove __EXPO_ROUTER_key which is added by PUSH
  * @returns a function which provides a screen id that matches the dynamic route name in params. */
 export function createGetIdForRoute(
-  route: Pick<RouteNode, 'dynamic' | 'route' | 'contextKey' | 'children'>,
-  getId: ScreenProps['getId']
+  route: Pick<RouteNode, 'dynamic' | 'route' | 'contextKey' | 'children'>
 ): ScreenProps['getId'] {
   const include = new Map<string, DynamicConvention>();
 
@@ -242,20 +240,7 @@ export function createGetIdForRoute(
     }
   }
 
-  return (options = {}) => {
-    const { params = {} } = options;
-    if (params.__EXPO_ROUTER_key) {
-      const key = params.__EXPO_ROUTER_key;
-      delete params.__EXPO_ROUTER_key;
-      if (getId == null) {
-        return key;
-      }
-    }
-
-    if (getId != null) {
-      return getId(options);
-    }
-
+  return withStrippedExpoRouterKey(({ params = {} } = {}) => {
     const segments: string[] = [];
 
     for (const dynamic of include.values()) {
@@ -274,6 +259,17 @@ export function createGetIdForRoute(
     }
 
     return segments.join('/') ?? route.contextKey;
+  });
+}
+
+function withStrippedExpoRouterKey(getId: ScreenProps['getId']): ScreenProps['getId'] {
+  return (options = {}) => {
+    if (options.params?.__EXPO_ROUTER_key) {
+      const key = options.params.__EXPO_ROUTER_key;
+      delete options.params.__EXPO_ROUTER_key;
+      return key;
+    }
+    return getId?.(options);
   };
 }
 
@@ -310,7 +306,7 @@ export function routeToScreen(
   return (
     <Screen
       {...props}
-      getId={createGetIdForRoute(route, getId)}
+      getId={getId ? withStrippedExpoRouterKey(getId) : createGetIdForRoute(route)}
       name={route.route}
       key={route.route}
       options={screenOptionsFactory(route, options)}
