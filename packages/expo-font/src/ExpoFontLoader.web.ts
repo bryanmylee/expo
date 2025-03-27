@@ -185,13 +185,16 @@ function getStyleElement(): HTMLStyleElement {
 const CSS_IDENT_RE = /^[a-zA-Z_-][\w-]*$/;
 
 export function _createWebFontTemplate(fontFamily: string, resource: FontResource): string {
-  const display =
+  const src = `src:url(${JSON.stringify(resource.uri)});`;
+  const displayContent =
     typeof resource.display === 'string' && CSS_IDENT_RE.test(resource.display)
       ? resource.display
       : FontDisplay.AUTO;
-  return `@font-face{font-family:${JSON.stringify(fontFamily)};src:url(${JSON.stringify(
-    resource.uri
-  )});font-display:${display}}`;
+  const display = `font-display:${displayContent}`;
+  const family = `font-family:${JSON.stringify(resource.family ?? fontFamily)};`;
+  const weight = resource.weight ? `font-weight:${resource.weight};` : '';
+  const style = resource.style ? `font-style:${resource.style};` : '';
+  return `@font-face{${src}${family}${weight}${style}${display}}`;
 }
 
 function _createWebStyle(fontFamily: string, resource: FontResource): HTMLStyleElement {

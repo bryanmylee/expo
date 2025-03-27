@@ -9,6 +9,7 @@
 ### 🎉 New features
 
 - [web] Added `Server.withServerContext(callback)` which scopes server-side font loads per render. ([#46669](https://github.com/expo/expo/pull/46669) by [@hassankhan](https://github.com/hassankhan))
+- [Web] `useFonts` allows multiple font files to define different font styles and weights.
 
 ### 🐛 Bug fixes
 
